@@ -1,21 +1,12 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-// Suspense is used here to handle async operations gracefully
 export default function DonationSuccess() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <DonationSuccessContent />
-    </Suspense>
-  );
-}
-
-function DonationSuccessContent() {
   const [status, setStatus] = useState("Set your name for the Hall of Fame")
   const [hallOfFameName, setHallOfFameName] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -126,3 +117,4 @@ function DonationSuccessContent() {
     </div>
   );
 }
+

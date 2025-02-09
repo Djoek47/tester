@@ -37,7 +37,7 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
       })
         .then((res) => res.json())
         .then((data) => setClientSecret(data.clientSecret))
-        .catch(() => setError("Failed to initialize payment. Please try again."))
+        .catch((err) => setError("Failed to initialize payment. Please try again."))
     }
   }, [amount])
 
@@ -53,7 +53,7 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
       confirmParams: {
         return_url: `${window.location.origin}/donation-success`,
       },
-    })
+    });
 
     if (submitError) {
       setError(submitError.message ?? "An unexpected error occurred")
@@ -65,20 +65,20 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
+          body: JSON.stringify({ 
             name: name,
-            amount: Number(amount),
+            amount: Number(amount)
           }),
-        })
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to record donation")
+          throw new Error("Failed to record donation");
         }
 
-        onSuccess(name, amount)
+        onSuccess(name, amount);
       } catch (err) {
-        console.error("Error recording donation:", err)
-        setError("Payment successful but failed to record donation. Please contact support.")
+        console.error("Error recording donation:", err);
+        setError("Payment successful but failed to record donation. Please contact support.");
       }
     }
     setIsProcessing(false)
@@ -133,8 +133,8 @@ export default function Donations() {
     })
       .then((res) => res.json())
       .then((data) => setClientSecret(data.clientSecret))
-      .catch((err) => console.error("Failed to initialize payment:", err))
-  }, [])
+      .catch((err) => console.error("Failed to initialize payment:", err));
+  }, []);
 
   const fetchDonations = useCallback(async () => {
     try {
@@ -172,22 +172,22 @@ export default function Donations() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, amount: Number(amount) }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to submit donation")
+        throw new Error("Failed to submit donation");
       }
 
       // After successful POST, fetch the updated donations list
-      await fetchDonations()
+      await fetchDonations();
 
       // Show success message
-      alert(`Thank you, ${name}, for your donation of $${amount}!`)
+      alert(`Thank you, ${name}, for your donation of $${amount}!`);
     } catch (err) {
-      console.error("Error submitting donation:", err)
-      alert("Failed to submit donation. Please try again.")
+      console.error("Error submitting donation:", err);
+      alert("Failed to submit donation. Please try again.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-[#f0f0f0] dark:bg-gray-900">
@@ -201,7 +201,7 @@ export default function Donations() {
             Support the development of DJT47
           </p>
           <p className="text-lg mb-6">
-            The top donor&apos;s name is already immortalized on a grand marble plaque in our current DJT45 virtual museum!
+            The top donor's name is already immortalized on a grand marble plaque in our current DJT45 virtual museum!
           </p>
           <Link href="/download">
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-white text-lg py-4 px-6 rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 mb-8">
@@ -236,7 +236,7 @@ export default function Donations() {
                 Top Donors - Hall of Fame
               </CardTitle>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 font-hind">
-                The #1 donor&apos;s name is already enshrined on a virtual marble plaque
+                The #1 donor's name is already enshrined on a virtual marble plaque
               </p>
             </CardHeader>
             <CardContent>
@@ -264,3 +264,4 @@ export default function Donations() {
     </div>
   )
 }
+
