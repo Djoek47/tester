@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
-import type React from "react" // Added import for React
 
 export default function DonationSuccessContent() {
   const [status, setStatus] = useState("Set your name for the Hall of Fame")
@@ -17,29 +16,29 @@ export default function DonationSuccessContent() {
 
   const searchParams = useSearchParams()
   const paymentIntentId = searchParams.get("payment_intent")
+  const name = searchParams.get("name")
+  const amount = searchParams.get("amount")
 
   useEffect(() => {
-    console.log("Payment Intent ID:", paymentIntentId)
-
     if (paymentIntentId) {
       fetch(`/api/verify-payment?payment_intent=${paymentIntentId}`)
         .then((res) => res.json())
         .then((data) => {
-          console.log("Verification Response:", data)
           if (data.success) {
-            setDonationAmount(Math.floor(data.amount / 100))
+            setDonationAmount(Number(amount))
+            setHallOfFameName(name || "")
           } else {
             throw new Error(data.message || "Payment verification failed")
           }
         })
         .catch((err) => {
-          console.error("Error fetching amount:", err)
+          console.error("Error verifying payment:", err)
           setError("Error verifying payment. Please contact support.")
         })
     } else {
       setError("No payment information found. Please contact support.")
     }
-  }, [paymentIntentId])
+  }, [paymentIntentId, amount, name])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,26 +54,18 @@ export default function DonationSuccessContent() {
       const data = await verifyRes.json()
 
       if (data.success) {
-        const response = await fetch(`/api/check-hall-of-fame?payment_intent=${paymentIntentId}&name=${hallOfFameName}`)
-        const checkData = await response.json()
-
-        if (checkData.exists) {
-          setError("This name has already been added to the Hall of Fame for this payment.")
-          return
-        }
-
-        const donationResponse = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler", {
+        const response = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             name: hallOfFameName,
-            amount: Math.floor(data.amount / 100),
+            amount: donationAmount,
           }),
         })
 
-        if (!donationResponse.ok) {
+        if (!response.ok) {
           throw new Error("Failed to record donation")
         }
 
@@ -102,10 +93,10 @@ export default function DonationSuccessContent() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {donationAmount && (
+          {donationAmount !== null && (
             <div className="text-center mb-6">
               <p className="text-xl font-bold text-green-600 dark:text-green-500">
-                Thank you for your donation of ${donationAmount}!
+                Thank you for your donation of ${donationAmount.toFixed(2)}!
               </p>
             </div>
           )}

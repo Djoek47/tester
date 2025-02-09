@@ -11,7 +11,6 @@ import { AlertCircle, Download } from "lucide-react"
 import Link from "next/link"
 import BitcoinDonateButton from "./bitcoin-donate-button"
 
-// Replace with your Stripe publishable key
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 type Donation = {
@@ -29,15 +28,23 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
   const elements = useElements()
 
   useEffect(() => {
-    if (amount) {
+    if (amount && Number(amount) > 0) {
       fetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: Number(amount) }),
       })
         .then((res) => res.json())
-        .then((data) => setClientSecret(data.clientSecret))
+        .then((data) => {
+          if (data.error) {
+            setError(data.error)
+          } else {
+            setClientSecret(data.clientSecret)
+          }
+        })
         .catch((err) => setError("Failed to initialize payment. Please try again."))
+    } else {
+      setClientSecret("")
     }
   }, [amount])
 
@@ -51,37 +58,14 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
     const { error: submitError } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/donation-success`,
+        return_url: `${window.location.origin}/donation-success?name=${encodeURIComponent(name)}&amount=${encodeURIComponent(amount)}`,
       },
-    });
+    })
 
     if (submitError) {
       setError(submitError.message ?? "An unexpected error occurred")
-    } else {
-      // Send donation data to server
-      try {
-        const response = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ 
-            name: name,
-            amount: Number(amount)
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to record donation");
-        }
-
-        onSuccess(name, amount);
-      } catch (err) {
-        console.error("Error recording donation:", err);
-        setError("Payment successful but failed to record donation. Please contact support.");
-      }
+      setIsProcessing(false)
     }
-    setIsProcessing(false)
   }
 
   return (
@@ -100,7 +84,7 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
           id="amount"
           type="number"
           min="1"
-          step="1"
+          step="0.01"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required
@@ -113,7 +97,7 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
         className="w-full bg-green-600 hover:bg-green-700 text-white"
         disabled={isProcessing || !clientSecret}
       >
-        {isProcessing ? "Processing..." : "Donate"}
+        {isProcessing ? "Processing..." : `Donate $${amount}`}
       </Button>
     </form>
   )
@@ -129,12 +113,12 @@ export default function Donations() {
     fetch("/api/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 1 }),
+      body: JSON.stringify({ amount: 1 }), // 1 dollar for initial setup
     })
       .then((res) => res.json())
       .then((data) => setClientSecret(data.clientSecret))
-      .catch((err) => console.error("Failed to initialize payment:", err));
-  }, []);
+      .catch((err) => console.error("Failed to initialize payment:", err))
+  }, [])
 
   const fetchDonations = useCallback(async () => {
     try {
@@ -145,7 +129,7 @@ export default function Donations() {
       const text = await response.text()
       const donationsList = text.split("\n").map((line) => {
         const [name, amountStr] = line.split(": $")
-        return { name, amount: Number.parseInt(amountStr, 10) }
+        return { name, amount: Number.parseFloat(amountStr) }
       })
       setDonations(donationsList)
       setError(null)
@@ -165,41 +149,33 @@ export default function Donations() {
 
   const handleDonationSuccess = async (name: string, amount: string) => {
     try {
-      // First send POST request to server
       const response = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, amount: Number(amount) }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to submit donation");
+        throw new Error("Failed to submit donation")
       }
 
-      // After successful POST, fetch the updated donations list
-      await fetchDonations();
-
-      // Show success message
-      alert(`Thank you, ${name}, for your donation of $${amount}!`);
+      await fetchDonations()
+      alert(`Thank you, ${name}, for your donation of $${amount}!`)
     } catch (err) {
-      console.error("Error submitting donation:", err);
-      alert("Failed to submit donation. Please try again.");
+      console.error("Error submitting donation:", err)
+      alert("Failed to submit donation. Please try again.")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-[#f0f0f0] dark:bg-gray-900">
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-yellow-600 dark:text-yellow-500 font-montserrat">
-            Donations
-          </h1>
-          <p className="text-xl mb-6 text-gray-700 dark:text-gray-300 font-lora">
-            Support the development of DJT47
-          </p>
+          <h1 className="text-4xl font-bold mb-4 text-yellow-600 dark:text-yellow-500 font-montserrat">Donations</h1>
+          <p className="text-xl mb-6 text-gray-700 dark:text-gray-300 font-lora">Support the development of DJT47</p>
           <p className="text-lg mb-6">
             The top donor's name is already immortalized on a grand marble plaque in our current DJT45 virtual museum!
           </p>
@@ -252,7 +228,7 @@ export default function Donations() {
                   {donations.map((donation, index) => (
                     <li key={index} className="flex justify-between items-center">
                       <span>{donation.name}</span>
-                      <span className="font-bold">${donation.amount}</span>
+                      <span className="font-bold">${donation.amount.toFixed(2)}</span>
                     </li>
                   ))}
                 </ul>
