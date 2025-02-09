@@ -33,7 +33,7 @@ export default function DownloadPage() {
                 </ul>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://storage.googleapis.com/djt45test/Windows.zip" download>
+                <a href="https://storage.googleapis.com/djt45test/hgh/Windows.7z" download>
                   <Button className="bg-blue-600 text-white hover:bg-blue-700">
                     <Download className="mr-2 h-4 w-4" /> Download for Windows (64-bit)
                   </Button>
