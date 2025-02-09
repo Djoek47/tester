@@ -3,6 +3,7 @@ import { Montserrat, Lora, Hind_Madurai } from "next/font/google"
 import "./globals.css"
 import type React from "react"
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const montserrat = Montserrat({ 
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default function RootLayout({
         </div>
         <script src="https://www.blockonomics.co/js/pay_button.js" />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
