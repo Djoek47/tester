@@ -8,7 +8,6 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "@/component
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import Link from "next/link"
-import Image from 'next/image'
 
 const exhibits = {
   presidency: [
@@ -99,12 +98,10 @@ export default function Exhibits() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Image 
+                    <img 
                       src={exhibit.image} 
                       alt={exhibit.title} 
                       className="w-full h-48 object-cover mb-4 rounded-md shadow-md dark:shadow-gray-900/30" 
-                      width={500}
-                      height={300}
                     />
                     <CardDescription className="font-hind text-lg text-gray-600 dark:text-gray-300">
                       {exhibit.description}
@@ -129,12 +126,10 @@ export default function Exhibits() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Image 
+                    <img 
                       src={exhibit.image} 
                       alt={exhibit.title} 
                       className="w-full h-48 object-cover mb-4 rounded-md shadow-md dark:shadow-gray-900/30" 
-                      width={500}
-                      height={300}
                     />
                     <CardDescription className="font-hind text-lg text-gray-600 dark:text-gray-300">
                       {exhibit.description}
@@ -159,12 +154,10 @@ export default function Exhibits() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Image 
+                    <img 
                       src={exhibit.image} 
                       alt={exhibit.title} 
                       className="w-full h-48 object-cover mb-4 rounded-md shadow-md dark:shadow-gray-900/30" 
-                      width={500}
-                      height={300}
                     />
                     <CardDescription className="font-hind text-lg text-gray-600 dark:text-gray-300">
                       {exhibit.description}

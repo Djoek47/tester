@@ -10,7 +10,7 @@ import { Mail, Phone, MapPin } from "lucide-react"
 import { useState } from "react"
 
 export default function Contact() {
-  const [message, setMessage] = useState("")
+  const [message, setMessage] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,9 +77,9 @@ export default function Contact() {
                   <Textarea
                     id="message"
                     required
-                    className="w-full min-h-[150px] dark:bg-gray-700 dark:border-gray-600"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    className="w-full min-h-[150px] dark:bg-gray-700 dark:border-gray-600"
                   />
                 </div>
                 <Button

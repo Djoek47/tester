@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-// Create a separate component for handling search parameters
 function Search() {
   const searchParams = useSearchParams()
-  const paymentIntentId = searchParams.get("payment_intent")
-
-  return paymentIntentId; // You can return or use the paymentIntentId as needed
+  return searchParams.get("payment_intent"); // Return the payment intent ID
 }
 
 export default function DonationSuccess() {

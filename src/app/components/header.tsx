@@ -3,6 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import DonateButton from "./donate-button"
 import ThemeToggle from "./theme-toggle"
 
 export default function Header() {
@@ -38,6 +40,7 @@ export default function Header() {
               </Link>
             ))}
             <ThemeToggle />
+            <DonateButton />
           </nav>
 
           {/* Mobile Menu Button */}
@@ -71,6 +74,9 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
+              <div className="pt-2">
+                <DonateButton />
+              </div>
             </nav>
           </div>
         )}

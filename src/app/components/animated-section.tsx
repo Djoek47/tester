@@ -12,7 +12,7 @@ interface AnimatedSectionProps {
   direction?: Direction
 }
 
-const directions: Record<Direction, { initial: { y?: number; x?: number }; animate: { y?: number; x?: number } }> = {
+const directions: Record<Direction, { initial: any; animate: any }> = {
   up: { initial: { y: 50 }, animate: { y: 0 } },
   down: { initial: { y: -50 }, animate: { y: 0 } },
   left: { initial: { x: -50 }, animate: { x: 0 } },

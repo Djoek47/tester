@@ -37,13 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Remove synchronous script usage */}
-        {/* <script src="https://www.blockonomics.co/js/pay_button.js" /> */}
+        <script src="https://blockonomics.co/js/pay_widget.js" async defer />
       </head>
       <body className={`${montserrat.variable} ${lora.variable} ${hindMadurai.variable}`}>
         <div className="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-hind transition-colors">
           {children}
         </div>
+        <script src="https://www.blockonomics.co/js/pay_button.js" />
       </body>
     </html>
   )
