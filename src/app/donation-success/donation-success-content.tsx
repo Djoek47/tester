@@ -54,7 +54,7 @@ export default function DonationSuccessContent() {
       const data = await verifyRes.json()
 
       if (data.success) {
-        const response = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler", {
+        const response = await fetch("https://donationgcloud-831622268277.us-central1.run.app", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Download } from "lucide-react"
 import Link from "next/link"
 import BitcoinDonateButton from "./bitcoin-donate-button"
+import { clearAllModuleContexts } from "next/dist/server/lib/render-server"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -29,10 +30,11 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
 
   useEffect(() => {
     if (amount && Number(amount) > 0) {
+      console.log("Sending amount to create payment intent:", Number(amount)); // Log the amount being sent
       fetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: Number(amount) }),
+        body: JSON.stringify({ amount: Number(amount) }), // Ensure this is the correct amount
       })
         .then((res) => res.json())
         .then((data) => {
@@ -65,6 +67,28 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
     if (submitError) {
       setError(submitError.message ?? "An unexpected error occurred")
       setIsProcessing(false)
+    }
+
+    try {
+      const response = await fetch("https://donationgcloud-831622268277.us-central1.run.app", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          name: name,
+          amount: Number(amount) // Send the correct amount
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to record donation");
+      }
+
+      onSuccess(name, amount);
+    } catch (err) {
+      console.error("Error recording donation:", err);
+      setError("Payment successful but failed to record donation. Please contact support.");
     }
   }
 
@@ -108,12 +132,13 @@ export default function Donations() {
   const [donations, setDonations] = useState<Donation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+ 
 
   useEffect(() => {
     fetch("/api/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 1 }), // 1 dollar for initial setup
+      body: JSON.stringify({ amount: 1 }), // This can be removed or adjusted based on your logic
     })
       .then((res) => res.json())
       .then((data) => setClientSecret(data.clientSecret))
@@ -122,7 +147,7 @@ export default function Donations() {
 
   const fetchDonations = useCallback(async () => {
     try {
-      const response = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler")
+      const response = await fetch("https://donationgcloud-831622268277.us-central1.run.app")
       if (!response.ok) {
         throw new Error("Failed to fetch donations")
       }
@@ -149,7 +174,7 @@ export default function Donations() {
 
   const handleDonationSuccess = async (name: string, amount: string) => {
     try {
-      const response = await fetch("https://us-central1-my-project-test-450122.cloudfunctions.net/donationsHandler", {
+      const response = await fetch("https://donationgcloud-831622268277.us-central1.run.app", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
