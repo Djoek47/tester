@@ -33,11 +33,11 @@ export default function DownloadPage() {
                 </ul>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://storage.googleapis.com/djt45test/hgh/Windows.7z" download>
-                  <Button className="bg-blue-600 text-white hover:bg-blue-700">
-                    <Download className="mr-2 h-4 w-4" /> Download for Windows (64-bit)
+                <Link href="https://storage.googleapis.com/djt45test/Lighting%20RT/T45.7z" passHref>
+                  <Button className="bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white text-lg py-4 px-6 rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 mb-8">
+                    <Download className="mr-2 h-5 w-5" /> Download VR App
                   </Button>
-                </a>
+                </Link>
               </div>
               <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
                 <Monitor size={16} />
