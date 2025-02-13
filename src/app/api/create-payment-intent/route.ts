@@ -6,31 +6,48 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 export async function POST(request: NextRequest) {
+  const body = await request.json()
+  console.log("Received request body:", body)
+
+  const { amount, priceId } = body
+
+  console.log("Extracted amount:", amount)
+  console.log("Extracted priceId:", priceId)
+
+  if (typeof amount !== "number" || amount <= 0) {
+    return NextResponse.json({ error: "Invalid amount" }, { status: 400 })
+  }
+
   try {
-    const body = await request.json()
-    const amount = Number.parseFloat(body.amount)
+    // Retrieve the price from Stripe
+    const price = await stripe.prices.retrieve(priceId)
+    console.log("Retrieved price:", price)
 
-    if (isNaN(amount) || amount <= 0) {
-      return NextResponse.json({ error: "Please enter a valid amount greater than 0" }, { status: 400 })
-    }
+    // Calculate the amount in cents
+    const amountInCents = Math.round(amount * 100)
+    console.log("Amount in cents:", amountInCents)
 
-    console.log("Creating payment intent with amount:", amount)
-
+    // Create a payment intent with the user-specified amount
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency: "usd",
+      amount: amountInCents,
+      currency: price.currency,
+      payment_method_types: ["card"],
       metadata: {
-        integration_check: "accept_a_payment",
+        priceId: priceId,
+        originalAmount: amount.toString(),
       },
     })
 
+    console.log("Created payment intent:", paymentIntent.id)
+    console.log("Payment intent amount:", paymentIntent.amount)
+
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
-      amount: amount,
+      amount: amountInCents,
     })
   } catch (error) {
-    console.error("Payment Intent Error:", error)
-    return NextResponse.json({ error: "Unable to process payment. Please try again." }, { status: 500 })
+    console.error("Error creating payment intent:", error)
+    return NextResponse.json({ error: "Failed to create payment intent" }, { status: 500 })
   }
 }
 

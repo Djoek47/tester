@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
@@ -10,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Download } from "lucide-react"
 import Link from "next/link"
 import BitcoinDonateButton from "./bitcoin-donate-button"
-import { clearAllModuleContexts } from "next/dist/server/lib/render-server"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -19,40 +19,24 @@ type Donation = {
   amount: number
 }
 
-const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string) => void }) => {
+const PaymentForm = ({
+  clientSecret,
+  amount,
+  onSuccess,
+}: {
+  clientSecret: string
+  amount: number
+  onSuccess: (name: string, amount: number) => void
+}) => {
   const [name, setName] = useState("")
-  const [amount, setAmount] = useState("")
-  const [clientSecret, setClientSecret] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const stripe = useStripe()
   const elements = useElements()
 
-  useEffect(() => {
-    if (amount && Number(amount) > 0) {
-      console.log("Sending amount to create payment intent:", Number(amount)); // Log the amount being sent
-      fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: Number(amount) }), // Ensure this is the correct amount
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            setError(data.error)
-          } else {
-            setClientSecret(data.clientSecret)
-          }
-        })
-        .catch((err) => setError("Failed to initialize payment. Please try again."))
-    } else {
-      setClientSecret("")
-    }
-  }, [amount])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stripe || !elements || !clientSecret) return
+    if (!stripe || !elements) return
 
     setIsProcessing(true)
     setError(null)
@@ -60,35 +44,15 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
     const { error: submitError } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/donation-success?name=${encodeURIComponent(name)}&amount=${encodeURIComponent(amount)}`,
+        return_url: `${window.location.origin}/donation-success`,
       },
     })
 
     if (submitError) {
       setError(submitError.message ?? "An unexpected error occurred")
       setIsProcessing(false)
-    }
-
-    try {
-      const response = await fetch("https://donationgcloud-831622268277.us-central1.run.app", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          name: name,
-          amount: Number(amount) // Send the correct amount
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to record donation");
-      }
-
-      onSuccess(name, amount);
-    } catch (err) {
-      console.error("Error recording donation:", err);
-      setError("Payment successful but failed to record donation. Please contact support.");
+    } else {
+      onSuccess(name, amount)
     }
   }
 
@@ -100,50 +64,55 @@ const DonationForm = ({ onSuccess }: { onSuccess: (name: string, amount: string)
         </label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
-      <div>
-        <label htmlFor="amount" className="block mb-2">
-          Amount ($)
-        </label>
-        <Input
-          id="amount"
-          type="number"
-          min="1"
-          step="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-        />
-      </div>
-      {clientSecret && <PaymentElement />}
+      <PaymentElement />
       {error && <div className="text-red-600">{error}</div>}
-      <Button
-        type="submit"
-        className="w-full bg-green-600 hover:bg-green-700 text-white"
-        disabled={isProcessing || !clientSecret}
-      >
-        {isProcessing ? "Processing..." : `Donate $${amount}`}
+      <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={isProcessing}>
+        {isProcessing ? "Processing..." : `Donate CAD $${amount.toFixed(2)}`}
       </Button>
     </form>
   )
 }
 
 export default function Donations() {
-  const [clientSecret, setClientSecret] = useState("")
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [amount, setAmount] = useState(10)
   const [donations, setDonations] = useState<Donation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
- 
 
-  useEffect(() => {
-    fetch("/api/create-payment-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 1 }), // This can be removed or adjusted based on your logic
-    })
-      .then((res) => res.json())
-      .then((data) => setClientSecret(data.clientSecret))
-      .catch((err) => console.error("Failed to initialize payment:", err))
+  const createPaymentIntent = useCallback(async (amount: number) => {
+    console.log("Creating payment intent with amount:", amount) // Debug log
+    try {
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amount,
+          priceId: "price_1QqTzXQxARdI6NgU7GnmPAR3",
+        }),
+      })
+      const data = await response.json()
+      console.log("Response from create-payment-intent:", data) // Debug log
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setClientSecret(data.clientSecret)
+      }
+    } catch (err) {
+      console.error("Error creating payment intent:", err)
+      setError("Failed to initialize payment. Please try again.")
+    }
   }, [])
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newAmount = Number.parseFloat(e.target.value)
+    console.log("Amount changed to:", newAmount) // Debug log
+    setAmount(newAmount)
+  }
+
+  const handleProceedToPayment = () => {
+    createPaymentIntent(amount)
+  }
 
   const fetchDonations = useCallback(async () => {
     try {
@@ -172,14 +141,15 @@ export default function Donations() {
     return () => clearInterval(intervalId)
   }, [fetchDonations])
 
-  const handleDonationSuccess = async (name: string, amount: string) => {
+  const handleDonationSuccess = async (name: string, amount: number) => {
+    console.log("Donation success:", name, amount) // Debug log
     try {
       const response = await fetch("https://donationgcloud-831622268277.us-central1.run.app", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, amount: Number(amount) }),
+        body: JSON.stringify({ name, amount }),
       })
 
       if (!response.ok) {
@@ -187,7 +157,7 @@ export default function Donations() {
       }
 
       await fetchDonations()
-      alert(`Thank you, ${name}, for your donation of $${amount}!`)
+      alert(`Thank you, ${name}, for your donation of CAD $${amount.toFixed(2)}!`)
     } catch (err) {
       console.error("Error submitting donation:", err)
       alert("Failed to submit donation. Please try again.")
@@ -218,12 +188,30 @@ export default function Donations() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {clientSecret ? (
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <DonationForm onSuccess={handleDonationSuccess} />
-                </Elements>
+              {!clientSecret ? (
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="amount" className="block mb-2">
+                      Amount (CAD $)
+                    </label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      min="10"
+                      step="0.01"
+                      value={amount}
+                      onChange={handleAmountChange}
+                      required
+                    />
+                  </div>
+                  <Button onClick={handleProceedToPayment} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    Proceed to Payment
+                  </Button>
+                </div>
               ) : (
-                <div className="text-center py-4">Loading payment form...</div>
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <PaymentForm clientSecret={clientSecret} amount={amount} onSuccess={handleDonationSuccess} />
+                </Elements>
               )}
               <div className="mt-4">
                 <p className="text-center mb-2">Or donate with Bitcoin:</p>
@@ -253,7 +241,7 @@ export default function Donations() {
                   {donations.map((donation, index) => (
                     <li key={index} className="flex justify-between items-center">
                       <span>{donation.name}</span>
-                      <span className="font-bold">${donation.amount.toFixed(2)}</span>
+                      <span className="font-bold">CAD ${donation.amount.toFixed(2)}</span>
                     </li>
                   ))}
                 </ul>
