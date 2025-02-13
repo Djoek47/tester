@@ -45,9 +45,6 @@ export default function RootLayout({
         <div className="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-hind transition-colors">
           {children}
         </div>
-        Sign up for free
-        View demos
-        Calculator
         <script src="https://www.blockonomics.co/js/pay_button.js" />
         <Analytics />
         <SpeedInsights />
